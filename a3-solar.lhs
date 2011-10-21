@@ -8,6 +8,7 @@ I used ghci -iSOE/src to extend the ghci search path so it includes
 the SOE libraries (where SOE is a subdirectory containing the
 SOE libraries).
 
+> import SOE
 > import Control.Applicative
 > import Animation hiding (planets, translate)
 > import Picture
@@ -68,32 +69,24 @@ Next, use the provided function translateB to write a function
 >       -> Float            -- the y-radius of the orbit
 >       -> Behavior Picture
 >
+> --overB ::  Behavior Picture -> Behavior Picture -> Behavior Picture
+> --overB a b = Beh (\t -> Over a b)
 > overB = lift2 Over
+> timefun :: Behavior Float
+> timefun = Beh(\t -> t)
 > cosB = lift1 cos
+> --time2 = (*2) <*> timefun
 
 >--- orbit p1 p2 freq xrad yrad = lift2 Over p1 p2
 >---   where p3 = translateB ( lift0(xrad*cos((fromIntegral(time))*freq)), lift0(yrad*sin((fromIntegral(time))*freq))) p2
 
-> orbit p1 p2 freq xrad yrad = overB p3 p4
->      where translated_p = (translateB (floatx, floaty) p2)
->            floatx :: Behavior Float
+> orbit p1 p2 freq xrad yrad = overB (translateB (floatx, floaty) p2) p1
+>      where floatx :: Behavior Float
 >            floatx = Beh (\t -> xrad*cos (t*freq))
 >            floaty :: Behavior Float
 >            floaty = Beh (\t -> yrad*sin (t*freq))
->            dummy :: Behavior Float
->            dummy = Beh (\t -> (freq * t))
->            asdf = cosB <*> dummy
->            p3 = 
->             if (cosB <*> dummy) > 0
->               then p1
->               else translated_p
->            p4 = p1
->            -- if cos(freq* x) > 0
->             --  then translated_p
->             --  else p1
->
-> at :: Behavior a -> Time -> a
-> at (Beh f) t = f t
+
+
 
 
 that takes two picture behaviors and makes the first orbit around the second at the specified 
@@ -114,8 +107,36 @@ x and y axes, respectively.
 A problem you might have noticed is the overlay behavior of planets. For this part modify 
 orbit to put planets over or under each other. 
 
+
+> myanimateB :: Time -> Float -> IO ()
+
 > -- running this definition in ghci should create the next animation
-> orbitTest' = error "define me"
+> orbitTest' = do
+>    t0 <- timeGetTime
+>    myanimateB t0 0.2
+
+
+> myanimateB t0 freq = do
+>       t <- timeGetTime
+>       let ft = (intToFloat (fromInteger(toInteger(t-t0))) / 1000)
+>       let myval = cos(ft*freq)
+>       if (myval > 0)
+>         then animateB "Solar system" (orbit sun mercury 2.0 2.0 freq)
+>         else animateB "Solar system" (orbitBehind sun mercury 2.0 2.0 freq)
+
+> orbitBehind :: Behavior Picture -- the satellite
+>       -> Behavior Picture -- the fixed body
+>       -> Float            -- the frequency of the orbit
+>       -> Float            -- the x-radius of the orbit
+>       -> Float            -- the y-radius of the orbit
+>       -> Behavior Picture
+>
+
+> orbitBehind p1 p2 freq xrad yrad = overB p1 (translateB (floatx, floaty) p2)
+>      where floatx :: Behavior Float
+>            floatx = Beh (\t -> xrad*cos (t*freq))
+>            floaty :: Behavior Float
+>            floaty = Beh (\t -> yrad*sin (t*freq))
 
 Modify your functions (and write any support functions that you find necessary) to make the orbital 
 distances and planet sizes shrink and grow by some factor (you can pass this factor as parameter 
