@@ -108,7 +108,7 @@ A problem you might have noticed is the overlay behavior of planets. For this pa
 orbit to put planets over or under each other. 
 
 
-> myanimateB :: Time -> Float -> IO ()
+> myanimateB :: Word32 -> Float -> IO ()
 
 > -- running this definition in ghci should create the next animation
 > orbitTest' = do
@@ -118,7 +118,7 @@ orbit to put planets over or under each other.
 
 > myanimateB t0 freq = do
 >       t <- timeGetTime
->       let ft = (intToFloat (fromInteger(toInteger(t-t0))) / 1000)
+>       let ft = (fromInteger(toInteger(t-t0)) / 1000)
 >       let myval = cos(ft*freq)
 >       if (myval > 0)
 >         then animateB "Solar system" (orbit sun mercury 2.0 2.0 freq)
